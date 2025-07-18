@@ -1,12 +1,10 @@
 -- {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Matrices
-  ( a,
-    add,
-    b,
+  ( add,
     dotproduct,
-    fromList2DDefault,
     fromList2D,
+    fromList2DDefault,
     identity,
     mapm,
     Matrix (..),
@@ -40,32 +38,6 @@ fromList2D rows@(r : rs)
 fromList2DDefault :: [[a]] -> Matrix a
 fromList2DDefault l =
   fromMaybe defaultMatrix $ fromList2D l
-
-a :: Matrix Double
-a =
-  fromMaybe defaultMatrix $
-    fromList2D
-      [ [-35, 0, -19, 99, -91, -35, 0],
-        [0, 0, -50, 0, 0, 80, 12],
-        [0, -88, 0, -3, 0, -82, 0],
-        [0, 0, 0, 0, 0, 91, 22],
-        [-46, 18, -97, 95, -26, 0, 9],
-        [0, 86, 0, -61, 22, 0, 0],
-        [0, 0, -15, -78, 0, 82, -25]
-      ]
-
-b :: Matrix Double
-b =
-  fromMaybe defaultMatrix $
-    fromList2D
-      [ [0, 1, 9],
-        [0, 0, 0],
-        [-1, 2, 0],
-        [27, 75, 2],
-        [54, 0, -29],
-        [0, -45, 0],
-        [0, 1, 0]
-      ]
 
 add :: (Num a) => Matrix a -> Matrix a -> Matrix a
 add m n = fromList2DDefault $ zipWith (zipWith (+)) melems nelems
@@ -102,11 +74,11 @@ multiply m n = fromList2DDefault $ map (\row -> map (dotproduct row) (transpose 
     ms = elements m
     ns = elements n
 
-prettyMatrix :: (Show a) => [[a]] -> String
+prettyMatrix :: (Show a) => Matrix a -> String
 prettyMatrix mat =
   let -- Convert all elements to strings
       stringMatrix :: [[String]]
-      stringMatrix = map (map show) mat
+      stringMatrix = map (map show) $ elements mat
 
       numCols :: Int
       numCols = maximum (map length stringMatrix ++ [0])
@@ -122,7 +94,7 @@ prettyMatrix mat =
       totalWidth = sum colWidths + (numCols - 1) + 4
 
       horizontalLine :: String
-      horizontalLine = concat $ replicate (totalWidth - 2) "─"
+      horizontalLine = concat $ replicate (totalWidth - 2) " "
 
       padLeft :: Int -> String -> String
       padLeft width s = replicate (width - length s) ' ' ++ s
