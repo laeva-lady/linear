@@ -4,9 +4,9 @@ module Matrices
   ( add,
     dotproduct,
     fromList2D,
-    fromList2DDefault,
     identity,
     mapm,
+    matrix,
     Matrix (..),
     multiply,
     power,
@@ -16,8 +16,6 @@ module Matrices
   )
 where
 
-import Data.Maybe
-
 data Matrix a
   = Matrix
   { rowCount :: Int,
@@ -25,35 +23,44 @@ data Matrix a
     elements :: [[a]]
   }
 
-defaultMatrix :: Matrix a
-defaultMatrix = Matrix {rowCount = 0, colCount = 0, elements = []}
+instance Show a => Show (Matrix a) where
+  show = prettyMatrix
 
-fromList2D :: [[a]] -> Maybe (Matrix a)
-fromList2D [] = Just $ Matrix 0 0 []
+matrix :: Int -> Int -> [[a]] -> Matrix a
+matrix r c es = Matrix {rowCount = r, colCount = c, elements = es}
+
+defaultMatrix :: Matrix a
+defaultMatrix = matrix 0 0 []
+
+fromList2D :: [[a]] -> Matrix a
+fromList2D [] = defaultMatrix
 fromList2D rows@(r : rs)
   | all (\row -> length row == length r) rs =
-      Just $ Matrix (length rows) (length r) rows
-  | otherwise = Nothing
-
-fromList2DDefault :: [[a]] -> Matrix a
-fromList2DDefault l =
-  fromMaybe defaultMatrix $ fromList2D l
+      Matrix (length rows) (length r) rows
+  | otherwise = defaultMatrix
 
 add :: (Num a) => Matrix a -> Matrix a -> Matrix a
-add m n = fromList2DDefault $ zipWith (zipWith (+)) melems nelems
+add m n
+  | mr == nr && mc == nc =
+      fromList2D $ zipWith (zipWith (+)) ms ns
+  | otherwise = defaultMatrix
   where
-    melems = elements m
-    nelems = elements n
+    mr = rowCount m
+    nr = rowCount n
+    mc = colCount m
+    nc = colCount n
+    ms = elements m
+    ns = elements n
 
 mapm :: (a -> a) -> Matrix a -> Matrix a
-mapm f m = fromList2DDefault $ map (map f) $ elements m
+mapm f m = fromList2D $ map (map f) $ elements m
 
 scale :: (Num a) => a -> Matrix a -> Matrix a
-scale k m = fromList2DDefault $ map (map (* k)) $ elements m
+scale k m = fromList2D $ map (map (* k)) $ elements m
 
 identity :: (Num a) => Int -> Matrix a
 identity size =
-  fromList2DDefault
+  fromList2D
     [[if i == j then 1 else 0 | j <- [0 .. size - 1]] | i <- [0 .. size - 1]]
 
 transpose :: [[a]] -> [[a]]
@@ -69,7 +76,7 @@ power 1 m = m
 power k m = multiply m (power (k - 1) m)
 
 multiply :: (Num a) => Matrix a -> Matrix a -> Matrix a
-multiply m n = fromList2DDefault $ map (\row -> map (dotproduct row) (transpose ns)) ms
+multiply m n = fromList2D $ map (\row -> map (dotproduct row) (transpose ns)) ms
   where
     ms = elements m
     ns = elements n

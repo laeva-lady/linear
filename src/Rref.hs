@@ -5,39 +5,39 @@ import Matrices
 -- taken from https://github.com/labruzese/HaskellRREF
 
 rref :: (Ord a, Fractional a) => Matrix a -> Matrix a
-rref matrix = cleanedRows $ foldl processColumn matrix [0 .. minDimension]
+rref mat = cleanedRows $ foldl processColumn mat [0 .. minDimension]
   where
-    minDimension = min (rowCount matrix - 1) (colCount matrix - 1)
+    minDimension = min (rowCount mat - 1) (colCount mat - 1)
     cleanedRows (Matrix m n rows) = Matrix m n $ map cleanupRow rows
     cleanupRow = map (\x -> if abs x < 1e-10 then 0 else x)
 
 processColumn :: (Ord a, Fractional a) => Matrix a -> Int -> Matrix a
-processColumn matrix col =
-  case findPivotRow matrix col of
-    Nothing -> matrix -- No pivot found, move to next column
+processColumn mat col =
+  case findPivotRow mat col of
+    Nothing -> mat -- No pivot found, move to next column
     Just pivotRow ->
-      let step1 = swapRows matrix col pivotRow -- put the pivot into the correct place
+      let step1 = swapRows mat col pivotRow -- put the pivot into the correct place
           step2 = normalizePivot step1 col -- make pivot 1
           step3 = makeColumnZero step2 col -- make the other items in that column zero
        in step3
 
 -- | Finds the first occurance of a nonzero entry in the column and returns the index of the column
 findPivotRow :: (Ord a, Fractional a) => Matrix a -> Int -> Maybe Int
-findPivotRow matrix col = findPivotRowHelper matrix col col
+findPivotRow mat col = findPivotRowHelper mat col col
 
 findPivotRowHelper :: (Ord a, Fractional a) => Matrix a -> Int -> Int -> Maybe Int
-findPivotRowHelper matrix@(Matrix m _ rows) col currentRow
+findPivotRowHelper mat@(Matrix m _ rows) col currentRow
   | currentRow >= m = Nothing -- all 0s
   | otherwise =
       let val = rows !! currentRow !! col
        in if abs val > 1e-10
             then Just currentRow -- we found the first non-zero
-            else findPivotRowHelper matrix col (currentRow + 1) -- check the next row
+            else findPivotRowHelper mat col (currentRow + 1) -- check the next row
 
 -- | Swap two rows in the matrix
 swapRows :: Matrix a -> Int -> Int -> Matrix a
-swapRows matrix@(Matrix m n rows) row1 row2
-  | row1 == row2 = matrix
+swapRows mat@(Matrix m n rows) row1 row2
+  | row1 == row2 = mat
   | otherwise = Matrix m n newElements
   where
     newElements = zipWith (curry swap) [0 ..] rows
