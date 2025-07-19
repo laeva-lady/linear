@@ -28,9 +28,12 @@ instance (Show a) => Show (Matrix a) where
 
 matrix :: Int -> Int -> [[a]] -> Matrix a
 matrix r c es
-  | length es /= r = defaultMatrix
-  | any (\row -> length row /= c) es = defaultMatrix
+  | length es /= r = error "Number of rows does not match given row count"
+  | any (\row -> length row /= c) es = error "All rows must have the same number of columns as the given column count"
   | otherwise = Matrix {rowCount = r, colCount = c, elements = es}
+
+issquare :: Matrix a -> Bool
+issquare (Matrix r c _) = r == c
 
 newelems :: Matrix a -> [[a]] -> Matrix a
 newelems m [] = m
@@ -44,13 +47,13 @@ fromList2D [] = defaultMatrix
 fromList2D rows@(r : rs)
   | all (\row -> length row == length r) rs =
       Matrix (length rows) (length r) rows
-  | otherwise = defaultMatrix
+  | otherwise = error "All rows must have the same length"
 
 add :: (Num a) => Matrix a -> Matrix a -> Matrix a
 add m n
   | mr == nr && mc == nc =
       newelems m $ zipWith (zipWith (+)) ms ns
-  | otherwise = defaultMatrix
+  | otherwise = error "Matrices must have the same dimensions for addition"
   where
     mr = rowCount m
     nr = rowCount n
@@ -77,18 +80,24 @@ transpose ([] : _) = []
 transpose x = map head x : transpose (map tail x)
 
 dotproduct :: (Num a) => [a] -> [a] -> a
-dotproduct va vb = sum $ zipWith (*) va vb
+dotproduct va vb
+  | length va == length vb = sum $ zipWith (*) va vb
+  | otherwise = error "Vectors must have the same length for dot product"
 
 power :: (Num a) => Int -> Matrix a -> Matrix a
+power k _ | k < 0 = error "Power must be a non-negative integer"
+power _ m | not $ issquare m = error "Matrix must be square"
 power 0 m = identity $ rowCount m
 power 1 m = m
 power k m = multiply m (power (k - 1) m)
 
 multiply :: (Num a) => Matrix a -> Matrix a -> Matrix a
-multiply m n = matrix rown colm $ map (\row -> map (dotproduct row) (transpose ns)) ms
+multiply m n
+  | colCount m == rowCount n = matrix newrow newcol $ map (\row -> map (dotproduct row) (transpose ns)) ms
+  | otherwise = error "The number of columns in the first matrix must equal the number of rows in the second matrix for multiplication"
   where
-    rown = rowCount n
-    colm = colCount m
+    newrow = rowCount m
+    newcol = colCount n
     ms = elements m
     ns = elements n
 
