@@ -23,11 +23,18 @@ data Matrix a
     elements :: [[a]]
   }
 
-instance Show a => Show (Matrix a) where
+instance (Show a) => Show (Matrix a) where
   show = prettyMatrix
 
 matrix :: Int -> Int -> [[a]] -> Matrix a
-matrix r c es = Matrix {rowCount = r, colCount = c, elements = es}
+matrix r c es
+  | length es /= r = defaultMatrix
+  | any (\row -> length row /= c) es = defaultMatrix
+  | otherwise = Matrix {rowCount = r, colCount = c, elements = es}
+
+newelems :: Matrix a -> [[a]] -> Matrix a
+newelems m [] = m
+newelems m xs = matrix (rowCount m) (colCount m) xs
 
 defaultMatrix :: Matrix a
 defaultMatrix = matrix 0 0 []
@@ -42,7 +49,7 @@ fromList2D rows@(r : rs)
 add :: (Num a) => Matrix a -> Matrix a -> Matrix a
 add m n
   | mr == nr && mc == nc =
-      fromList2D $ zipWith (zipWith (+)) ms ns
+      newelems m $ zipWith (zipWith (+)) ms ns
   | otherwise = defaultMatrix
   where
     mr = rowCount m
@@ -53,14 +60,16 @@ add m n
     ns = elements n
 
 mapm :: (a -> a) -> Matrix a -> Matrix a
-mapm f m = fromList2D $ map (map f) $ elements m
+mapm f m = newelems m $ map (map f) $ elements m
 
 scale :: (Num a) => a -> Matrix a -> Matrix a
-scale k m = fromList2D $ map (map (* k)) $ elements m
+scale k m = newelems m $ map (map (* k)) $ elements m
 
 identity :: (Num a) => Int -> Matrix a
 identity size =
-  fromList2D
+  matrix
+    size
+    size
     [[if i == j then 1 else 0 | j <- [0 .. size - 1]] | i <- [0 .. size - 1]]
 
 transpose :: [[a]] -> [[a]]
@@ -76,8 +85,10 @@ power 1 m = m
 power k m = multiply m (power (k - 1) m)
 
 multiply :: (Num a) => Matrix a -> Matrix a -> Matrix a
-multiply m n = fromList2D $ map (\row -> map (dotproduct row) (transpose ns)) ms
+multiply m n = matrix rown colm $ map (\row -> map (dotproduct row) (transpose ns)) ms
   where
+    rown = rowCount n
+    colm = colCount m
     ms = elements m
     ns = elements n
 
