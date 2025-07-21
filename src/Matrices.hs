@@ -76,8 +76,11 @@ identity size =
     [[if i == j then 1 else 0 | j <- [0 .. size - 1]] | i <- [0 .. size - 1]]
 
 transpose :: [[a]] -> [[a]]
-transpose ([] : _) = []
-transpose x = map head x : transpose (map tail x)
+transpose rows
+  | any null rows = []
+  | otherwise =
+      let (heads, tails) = unzip [(x, xs) | (x : xs) <- rows]
+       in heads : transpose tails
 
 dotproduct :: (Num a) => [a] -> [a] -> a
 dotproduct va vb

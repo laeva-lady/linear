@@ -10,8 +10,14 @@ import Rref
 
 main :: IO ()
 main = do
+  test01
   example01
   example02
+
+test01 :: IO ()
+test01 =
+  let m = [[1, 2, 3], [4, 5, 6]]
+   in print $ fromList2D $ transpose m
 
 example01 :: IO ()
 example01 =
